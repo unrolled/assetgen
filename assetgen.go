@@ -1,13 +1,13 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
-	"log"
-	"strings"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 var jsonReplaceConst = "FILE_NAME"
@@ -37,28 +37,32 @@ var jsonTemplate = `{
 
 func main() {
 	// Grab the directory from the os args.
-	searchDirectory, err := filepath.Abs(filepath.Dir(os.Args[1]))
+	searchDirectory, err := filepath.Abs(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Ensure we have a trailing slash.
+	if !strings.HasSuffix(searchDirectory, "/") {
+		searchDirectory += "/"
 	}
 
 	// Walk the directory and grab files that need to be converted.
 	filesToConvert := make(map[string]string)
 	filepath.Walk(searchDirectory, func(path string, f os.FileInfo, err error) error {
-		pathLower := strings.ToLower(path)
-		if filepath.Ext(pathLower) != ".png" ||
-		   strings.Contains(pathLower, ".imageset/") ||
-		   strings.Contains(pathLower, ".xcassets/") ||
-		   strings.HasSuffix(pathLower, "@2x.png") ||
-		   strings.HasSuffix(pathLower, "@3x.png") {
+		if filepath.Ext(path) != ".png" ||
+			strings.Contains(path, ".imageset/") ||
+			strings.Contains(path, ".xcassets/") ||
+			strings.HasSuffix(path, "@2x.png") ||
+			strings.HasSuffix(path, "@3x.png") {
 			return nil
 		}
-
 
 		tmpDir, tmpFile := filepath.Split(path)
 		filesToConvert[strings.Replace(tmpFile, ".png", "", 1)] = tmpDir
 		return nil
 	})
+
 	// Iterate over file list and generate the asset catalogs.
 	for file, directory := range filesToConvert {
 		newDir := fmt.Sprintf("%s%s.imageset", directory, file)
@@ -67,18 +71,20 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// Copy files in.
-		err = copyFile(fmt.Sprintf("%s/%s.png",directory,file), fmt.Sprintf("%s/%s.png",newDir, file))
+		// Copy files into the imageset folder.
+		err = copyFile(fmt.Sprintf("%s/%s.png", directory, file), fmt.Sprintf("%s/%s.png", newDir, file))
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = copyFile(fmt.Sprintf("%s/%s@2x.png",directory,file), fmt.Sprintf("%s/%s@2x.png",newDir, file))
+		err = copyFile(fmt.Sprintf("%s/%s@2x.png", directory, file), fmt.Sprintf("%s/%s@2x.png", newDir, file))
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("File did not exist, skipping. (%s)\n", err)
+			continue
 		}
-		err = copyFile(fmt.Sprintf("%s/%s@3x.png",directory,file), fmt.Sprintf("%s/%s@3x.png",newDir, file))
+		err = copyFile(fmt.Sprintf("%s/%s@3x.png", directory, file), fmt.Sprintf("%s/%s@3x.png", newDir, file))
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("File did not exist, skipping. (%s)\n", err)
+			continue
 		}
 
 		// Write JSON manifest.
@@ -91,7 +97,6 @@ func main() {
 		// Write success message.
 		log.Printf("Created %s\n", newDir)
 	}
-
 }
 
 func copyFile(src, dst string) error {
@@ -107,7 +112,7 @@ func copyFile(src, dst string) error {
 	}
 
 	if !src_file_stat.Mode().IsRegular() {
-		return fmt.Errorf("%s is not a regular file", src)
+		return fmt.Errorf("%s is not a regular file.", src)
 	}
 
 	dst_file, err := os.Create(dst)

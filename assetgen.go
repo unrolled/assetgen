@@ -68,7 +68,8 @@ func main() {
 		newDir := fmt.Sprintf("%s%s.imageset", directory, file)
 		err = os.Mkdir(newDir, 0755)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Folder already exists, skipping. (%s)\n", err)
+			continue
 		}
 
 		// Copy files into the imageset folder.

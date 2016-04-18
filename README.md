@@ -12,6 +12,15 @@ AssetGen converts PNGs to asset catalogs. This program as a very narrow focus, s
 
 ## Installation
 
+### Download binary
+
+You can download the binary directly from [here](https://github.com/unrolled/assetgen/releases/download/v1.0.0/assetgen). Once the binary has been downloaded, you can move it to `/usr/local/bin` and give it execution privileges:
+
+    mv assetgen /usr/local/bin/assetgen
+    chmod +x /usr/local/bin/assetgen
+
+### Installing with `go get`
+
 Ensure [Go](https://golang.org/dl/) is installed, and run the following:
 
     go get github.com/unrolled/assetgen
